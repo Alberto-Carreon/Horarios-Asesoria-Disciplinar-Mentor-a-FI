@@ -123,7 +123,7 @@
      * Estado
      *********************/
     const DEV_DEMO = false;           // Producción: false
-    const LS_KEY   = 'horarios_v9';   // clave localStorage
+    const LS_KEY = 'horarios_mvp'; // clave única estable
     const days = ['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado']; // sin acentos
     const TIME_SLOTS = genTimeSlots('07:00','20:30',30); // 30 min
 
@@ -142,7 +142,24 @@
     const nowISO = () => new Date().toISOString();
     const norm   = (s='') => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
-    function load(){ try{ const raw = localStorage.getItem(LS_KEY); if(raw){ Object.assign(state, JSON.parse(raw)); } }catch(e){ console.error(e); } }
+    function load(){
+  try{
+    // lee la clave unificada
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){ Object.assign(state, JSON.parse(raw)); return; }
+
+    // migración desde claves antiguas
+    const FALLBACK_KEYS = ['horarios_mvp_v9b','horarios_mvp_v8'];
+    for(const k of FALLBACK_KEYS){
+      const r = localStorage.getItem(k);
+      if(r){
+        Object.assign(state, JSON.parse(r));
+        localStorage.setItem(LS_KEY, JSON.stringify(state));
+        break;
+      }
+    }
+  }catch(e){ console.error(e); }
+}
     function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
     function setSession(session){ state.session = session; save(); render(); }
 
